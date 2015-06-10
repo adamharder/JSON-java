@@ -24,9 +24,7 @@ package org.json;
  SOFTWARE.
  */
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.io.Writer;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -253,6 +251,38 @@ public class JSONObject {
                     this.map.put(entry.getKey(), wrap(value));
                 }
             }
+        }
+    }
+
+    public JSONObject(File file) {
+        this();
+
+        BufferedReader br = null;
+        StringBuffer contents = new StringBuffer();
+        try {
+            String sCurrentLine;
+            br = new BufferedReader(new FileReader(file));
+            while ((sCurrentLine = br.readLine()) != null) {
+//                System.out.println(sCurrentLine);
+                contents.append(sCurrentLine);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (br != null) br.close();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+        this.add(new JSONObject(contents.toString()));
+    }
+
+    public void add(JSONObject rhs)
+    {
+        for (String key : rhs.keySet())
+        {
+            this.put(key, rhs.get(key));
         }
     }
 
@@ -487,6 +517,7 @@ public class JSONObject {
      * @throws JSONException
      *             if the value is not a Boolean or the String "true" or
      *             "false".
+     *             if an integer, follow the C convention
      */
     public boolean getBoolean(String key) throws JSONException {
         Object object = this.get(key);
@@ -496,8 +527,15 @@ public class JSONObject {
             return false;
         } else if (object.equals(Boolean.TRUE)
                 || (object instanceof String && ((String) object)
-                        .equalsIgnoreCase("true"))) {
+                .equalsIgnoreCase("true"))) {
             return true;
+
+    } else if ( object instanceof Integer)
+        {
+            return ((Integer)object)!=0;
+        } else if ( object instanceof Double)
+        {
+            return ((Double)object)!=0;
         }
         throw new JSONException("JSONObject[" + quote(key)
                 + "] is not a Boolean.");
@@ -1691,5 +1729,39 @@ public class JSONObject {
         } catch (IOException exception) {
             throw new JSONException(exception);
         }
+    }
+
+    //TODO: add to this logic
+    public boolean containsAll(JSONObject rhs)
+    {
+        if (!this.keySet().containsAll(rhs.keySet()))
+        {
+            return false;
+        }
+        for(String key : this.keySet())
+        {
+            Object lhs_val = this.get(key);
+            Object rhs_val = rhs.get(key);
+            if (!lhs_val.getClass().isInstance(rhs_val.getClass()))
+            {
+                return false;
+            }
+            else
+            {
+                // pass
+                // TODO: recurse into JSONObjects
+                // TODO: recurse into JSONArrays
+                // TODO: break into type and compare strings
+            }
+
+        }
+        return true;
+
+    }
+    //TODO: add to this logic
+    public boolean equals(JSONObject rhs)
+    {
+        // TODO: this is sub-optimal
+        return this.containsAll(rhs) && rhs.containsAll(this);
     }
 }
