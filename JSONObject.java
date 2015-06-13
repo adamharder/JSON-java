@@ -1738,22 +1738,28 @@ public class JSONObject {
         {
             return false;
         }
+
         for(String key : this.keySet())
         {
+            if (!rhs.has(key)) {
+                // we've hit a key that is in LHS, but ont in RHS.
+                // this case is allowed, so we skip.
+                continue;
+            }
+
             Object lhs_val = this.get(key);
             Object rhs_val = rhs.get(key);
-            if (!lhs_val.getClass().isInstance(rhs_val.getClass()))
-            {
+            Object lhs_class = lhs_val.getClass();
+            Object rhs_class = rhs_val.getClass();
+
+            if (lhs_class != rhs_class) {
                 return false;
-            }
-            else
-            {
+            } else {
                 // pass
                 // TODO: recurse into JSONObjects
                 // TODO: recurse into JSONArrays
                 // TODO: break into type and compare strings
             }
-
         }
         return true;
 
@@ -1762,6 +1768,9 @@ public class JSONObject {
     public boolean equals(JSONObject rhs)
     {
         // TODO: this is sub-optimal
+        boolean lhs_e = this.containsAll(rhs);
+        boolean rhs_e = rhs.containsAll(this);
+
         return this.containsAll(rhs) && rhs.containsAll(this);
     }
 }
